@@ -9,3 +9,35 @@
   --bg-color: #1f2937;
   --text-color: #f9fafb;
 }
+
+/* --- Fix Monaco visibility when using Tailwind --- */
+.monaco-wrapper {
+  @apply bg-transparent;
+}
+
+/* Remove any white overlay applied by Monaco layers */
+.monaco-editor,
+.monaco-editor-background,
+.monaco-editor .margin,
+.monaco-editor .scroll-decoration {
+  background-color: transparent !important;
+}
+
+/* Optional: Match Tailwind theme background instead of transparent */
+:root {
+  --editor-bg-light: rgb(248 250 252 / 1); /* slate-50 */
+  --editor-bg-dark: rgb(15 23 42 / 1); /* slate-900 */
+}
+
+/* Light & dark theme backgrounds */
+body:not(.dark) .monaco-editor,
+body:not(.dark) .monaco-editor-background,
+body:not(.dark) .monaco-editor .margin {
+  background-color: var(--editor-bg-light) !important;
+}
+
+body.dark .monaco-editor,
+body.dark .monaco-editor-background,
+body.dark .monaco-editor .margin {
+  background-color: var(--editor-bg-dark) !important;
+}

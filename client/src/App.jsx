@@ -1,13 +1,29 @@
-import MonacoEditor from "../components/MonacoEditor";
-import Navbar from "../components/Navbar";
+import MonacoEditor from "./components/MonacoEditor";
+import Navbar from "./components/Navbar";
+import { useState,useEffect } from "react";
 
-export default function App() {
+function App() {
+  const [theme, setTheme] = useState("light");
+
+  useEffect(() => {
+    const saved = localStorage.getItem("theme") || "light";
+    setTheme(saved);
+    document.documentElement.setAttribute("data-theme", saved);
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === "light" ? "dark" : "light";
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+    document.documentElement.setAttribute("data-theme", newTheme);
+  };
+
   return (
-    <div className="App">
-      <Navbar/>
-      <h1>Hello CodeSandbox</h1>
-      <h2>Start editing to see some magic happen!</h2>
-      <MonacoEditor />
+    <div>
+      <Navbar theme={theme} toggleTheme={toggleTheme} />
+      <MonacoEditor theme={theme} />
     </div>
   );
 }
+
+export default App;
