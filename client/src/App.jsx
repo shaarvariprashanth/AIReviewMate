@@ -20,7 +20,7 @@ function App() {
 
   return (
     <div>
-      <Navbar theme={theme} toggleTheme={toggleTheme} />
+     <Navbar theme={theme} toggleTheme={toggleTheme} /> 
       <MonacoEditor theme={theme} />
     </div>
   );

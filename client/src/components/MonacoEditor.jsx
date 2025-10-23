@@ -1,228 +1,174 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useState, useRef } from "react";
 import Editor from "@monaco-editor/react";
 import DiffViewer from "react-diff-viewer";
 
-/*
-  AI Code Reviewer — App.jsx (JavaScript + React + Tailwind)
-  - Debounced auto-review with AbortController (latest-wins)
-  - Ctrl/Cmd+Enter to review now
-  - Many language options
-  - Side-by-side diff, Accept / Decline
-  - Tailwind-based polished UI
-  Backend contract (your friend): POST /api/review
-    Request: { code, language, operation }
-    Response: { improved_code, message, category }
-*/
+// ✅ Language starter templates
+const LANGUAGE_TEMPLATES = {
+  javascript: `// JavaScript Example
+function greet(name) {
+  console.log("Hello " + name);
+}
+greet("World");`,
+  python: `# Python Example
+def greet(name):
+    print("Hello", name)
 
-const LANGUAGE_OPTIONS = [
-  { label: "Auto-detect", value: "plaintext" },
-  { label: "JavaScript", value: "javascript" },
-  { label: "TypeScript", value: "typescript" },
-  { label: "Python", value: "python" },
-  { label: "Java", value: "java" },
-  { label: "C#", value: "csharp" },
-  { label: "C++", value: "cpp" },
-  { label: "Go", value: "go" },
-  { label: "Rust", value: "rust" },
-  { label: "Ruby", value: "ruby" },
-  { label: "PHP", value: "php" },
-  { label: "HTML", value: "html" },
-  { label: "CSS", value: "css" },
-  { label: "JSON", value: "json" },
-  { label: "YAML", value: "yaml" },
-  { label: "Shell", value: "shell" },
-  { label: "SQL", value: "sql" },
-  { label: "Kotlin", value: "kotlin" },
-  { label: "Swift", value: "swift" },
-  { label: "Objective-C", value: "objective-c" },
-];
+greet("World")`,
+  java: `// Java Example
+public class Main {
+    public static void main(String[] args) {
+        greet("World");
+    }
+    public static void greet(String name) {
+        System.out.println("Hello " + name);
+    }
+}`,
+  cpp: `// C++ Example
+#include <iostream>
+using namespace std;
+
+void greet(string name) {
+    cout << "Hello " << name << endl;
+}
+
+int main() {
+    greet("World");
+    return 0;
+}`,
+  c: `// C Example
+#include <stdio.h>
+
+void greet(char name[]) {
+    printf("Hello %s\\n", name);
+}
+
+int main() {
+    greet("World");
+    return 0;
+}`,
+  csharp: `// C# Example
+using System;
+
+class Program {
+    static void Main() {
+        Greet("World");
+    }
+    static void Greet(string name) {
+        Console.WriteLine("Hello " + name);
+    }
+}`,
+  go: `// Go Example
+package main
+import "fmt"
+
+func greet(name string) {
+    fmt.Println("Hello", name)
+}
+
+func main() {
+    greet("World")
+}`,
+  ruby: `# Ruby Example
+def greet(name)
+  puts "Hello #{name}"
+end
+
+greet("World")`,
+  php: `<?php
+function greet($name) {
+  echo "Hello " . $name;
+}
+
+greet("World");
+?>`,
+  swift: `// Swift Example
+func greet(_ name: String) {
+    print("Hello \\(name)")
+}
+
+greet("World")`,
+  kotlin: `// Kotlin Example
+fun greet(name: String) {
+    println("Hello " + name)
+}
+
+fun main() {
+    greet("World")
+}`,
+};
+
+// Dropdown options
+const LANGUAGE_OPTIONS = Object.keys(LANGUAGE_TEMPLATES).map((lang) => ({
+  label: lang.charAt(0).toUpperCase() + lang.slice(1),
+  value: lang,
+}));
 
 const OPERATION_OPTIONS = [
-  { label: "Bug Fixes", value: "Bug Fix" },
-  { label: "Code Optimisation", value: "Better Performance" },
+  { label: "Bug Fixes", value: "Bug Fixes" },
+  { label: "Optimisation", value: "Optimisation" },
   { label: "Best Practices", value: "Best Practices" },
-  { label: "Security", value: "Security" },
-  { label: "Readability", value: "Readability" },
 ];
 
-export default function App(props) {
-  const initialTheme = (props && props.initialTheme) || "dark";
-  const [code, setCode] = useState(
-    `// Welcome to AI Code Reviewer\n// Type or paste code on the left. Suggestions will appear on the right.`
-  );
+export default function App() {
   const [language, setLanguage] = useState("javascript");
-  const [operation, setOperation] = useState(OPERATION_OPTIONS[0].value);
-  const [review, setReview] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [theme, setTheme] = useState(initialTheme);
-
+  const [operation, setOperation] = useState("Bug Fixes");
+  const [code, setCode] = useState(LANGUAGE_TEMPLATES["javascript"]);
+  const [status, setStatus] = useState("idle"); // idle | thinking | done
+  const [improvedCode, setImprovedCode] = useState("");
   const typingTimeout = useRef(null);
-  const abortControllerRef = useRef(null);
-  const lastRequestSeq = useRef(0);
-  const editorRef = useRef(null);
 
-  const categoryColor = useCallback(function (cat) {
-    if (!cat) return "bg-gray-100 text-gray-800";
-    switch (cat.toLowerCase()) {
-      case "bug fix":
-        return "bg-red-100 text-red-800";
-      case "better performance":
-        return "bg-amber-100 text-amber-800";
-      case "best practices":
-        return "bg-blue-100 text-blue-800";
-      case "security":
-        return "bg-purple-100 text-purple-800";
-      case "readability":
-        return "bg-green-100 text-green-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  }, []);
+  // --- Simulated analysis logic ---
+  const analyseCode = (userCode) => {
+    const lines = userCode.split("\n");
+    const modified = [];
 
-  function handleEditorMount(editor) {
-    editorRef.current = editor;
-    editor.focus();
-  }
-
-  function acceptSuggestion() {
-    if (!review) return;
-    setCode(review.improved_code);
-    setReview(null);
-  }
-
-  function declineSuggestion() {
-    setReview(null);
-  }
-
-  async function copyToClipboard(text) {
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch (e) {
-      console.warn("Copy failed", e);
-    }
-  }
-
-  async function requestReview(payloadCode, signal, seq) {
-    try {
-      setError(null);
-      setLoading(true);
-      const res = await fetch("/api/review", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: payloadCode, language, operation }),
-        signal,
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || `Server returned ${res.status}`);
-      }
-
-      const data = await res.json();
-
-      if (!data || !data.improved_code || !data.message || !data.category) {
-        throw new Error("Invalid response shape from review API");
-      }
-
-      // ignore outdated responses (latest-wins)
-      if (seq < lastRequestSeq.current) return;
-
-      setReview({
-        improved_code: data.improved_code,
-        message: data.message,
-        category: data.category,
-      });
-    } catch (err) {
-      if (err && err.name === "AbortError") {
-        // expected cancellation
+    lines.forEach((line) => {
+      if (line.includes("Hello")) {
+        modified.push(line.replace("Hello", "Hi"));
+      } else if (line.includes("World")) {
+        modified.push(line.replace("World", "AI World"));
       } else {
-        console.error("Review request failed:", err);
-        setError((err && err.message) || "Review failed");
-        setReview(null);
+        modified.push(line);
       }
-    } finally {
-      setLoading(false);
-    }
-  }
+    });
 
-  function handleChange(value) {
-    setCode(value);
+    setImprovedCode(modified.join("\n"));
+  };
 
+  // --- Handle typing ---
+  const handleChange = (value) => {
+    setCode(value || "");
+    if (status !== "thinking") setStatus("thinking");
     if (typingTimeout.current) clearTimeout(typingTimeout.current);
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-    }
 
-    typingTimeout.current = setTimeout(function () {
-      const controller = new AbortController();
-      abortControllerRef.current = controller;
-      const seq = ++lastRequestSeq.current;
-      requestReview(value, controller.signal, seq);
-    }, 800);
-  }
+    typingTimeout.current = setTimeout(() => {
+      analyseCode(value || "");
+      setStatus("done");
+    }, 1000);
+  };
 
-  function triggerImmediateReview() {
-    if (typingTimeout.current) {
-      clearTimeout(typingTimeout.current);
-      typingTimeout.current = null;
-    }
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-    }
-
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-    const seq = ++lastRequestSeq.current;
-    requestReview(code, controller.signal, seq);
-  }
-
-  useEffect(function () {
-    const handler = function (e) {
-      const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
-      if ((isMac && e.metaKey && e.key === "Enter") || (!isMac && e.ctrlKey && e.key === "Enter")) {
-        e.preventDefault();
-        triggerImmediateReview();
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return function () {
-      window.removeEventListener("keydown", handler);
-    };
-  }, [code, language, operation]);
-
-  useEffect(function () {
-    return function () {
-      if (typingTimeout.current) clearTimeout(typingTimeout.current);
-      if (abortControllerRef.current) abortControllerRef.current.abort();
-    };
-  }, []);
+  // --- Language switch ---
+  const handleLanguageChange = (lang) => {
+    setLanguage(lang);
+    setCode(LANGUAGE_TEMPLATES[lang]);
+    setImprovedCode("");
+    setStatus("idle");
+  };
 
   return (
-    <div className={`h-screen flex flex-col ${theme === "dark" ? "bg-slate-900" : "bg-gray-50"}`}>
-      {/* Top bar */}
-      <div className="flex items-center gap-4 px-4 py-3 shadow-sm bg-gradient-to-r from-slate-800 to-indigo-800 text-white">
-        <div className="flex items-center gap-3">
-          <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="3" y="4" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="1.2" />
-            <path d="M8 9h8M8 13h5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-          </svg>
-          <div>
-            <div className="font-semibold text-lg">AI Code Reviewer</div>
-            <div className="text-xs opacity-80">Live suggestions · Ctrl/Cmd+Enter to review now</div>
-          </div>
-        </div>
+    <div className="h-screen flex flex-col bg-gray-900 text-white">
+      {/* Header */}
+      <header className="flex items-center justify-between px-6 py-3 bg-gradient-to-r from-indigo-700 to-purple-700 shadow-md">
+        <h1 className="text-lg font-semibold">AI Code Reviewer</h1>
 
-        {/* Selects */}
-        <div className="ml-auto flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-white/5 px-2 py-1 rounded">
-            <label className="text-xs opacity-80 mr-1">Language</label>
+        <div className="flex gap-4 items-center">
+          {/* Language Dropdown */}
+          <div>
+            <label className="text-sm mr-2">Language:</label>
             <select
               value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              className="bg-transparent text-sm outline-none pr-4"
+              onChange={(e) => handleLanguageChange(e.target.value)}
+              className="bg-indigo-600 text-white px-2 py-1 rounded-md text-sm"
             >
               {LANGUAGE_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -232,12 +178,13 @@ export default function App(props) {
             </select>
           </div>
 
-          <div className="flex items-center gap-2 bg-white/5 px-2 py-1 rounded">
-            <label className="text-xs opacity-80 mr-1">Operation</label>
+          {/* Operation Dropdown */}
+          <div>
+            <label className="text-sm mr-2">Operation:</label>
             <select
               value={operation}
               onChange={(e) => setOperation(e.target.value)}
-              className="bg-transparent text-sm outline-none pr-4"
+              className="bg-indigo-600 text-white px-2 py-1 rounded-md text-sm"
             >
               {OPERATION_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -246,124 +193,99 @@ export default function App(props) {
               ))}
             </select>
           </div>
-
-          <button onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))} className="px-3 py-1 rounded bg-white/6 text-sm">
-            {theme === "dark" ? "Light" : "Dark"}
-          </button>
-
-          <button onClick={() => triggerImmediateReview()} className="px-3 py-1 rounded bg-emerald-500 hover:bg-emerald-600 text-white text-sm">
-            Review now
-          </button>
         </div>
-      </div>
+      </header>
 
-      {/* Main area */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Editor pane */}
-        <div className={`${review ? "w-1/2" : "w-full"} transition-all duration-200`}>
-          <div className="h-full flex flex-col">
-            <div className="flex items-center justify-between px-3 py-2 border-b bg-white/5">
-              <div className="text-sm text-gray-200">Editor</div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    if (editorRef.current) copyToClipboard(code);
-                  }}
-                  className="text-xs px-2 py-1 rounded bg-white/6"
-                >
-                  Copy
-                </button>
+      {/* Editor + Output */}
+      <div className="flex flex-1">
+        {/* Left editor */}
+        <div className="w-1/2 border-r border-gray-800">
+          <Editor
+            height="100%"
+            language={language}
+            theme="vs-dark"
+            value={code}
+            onChange={handleChange}
+            options={{
+              minimap: { enabled: false },
+              fontSize: 14,
+              automaticLayout: true,
+              scrollBeyondLastLine: false,
+            }}
+          />
+        </div>
 
-                <button
-                  onClick={() => {
-                    setCode("// New file\n");
-                    if (editorRef.current) editorRef.current.focus();
-                  }}
-                  className="text-xs px-2 py-1 rounded bg-white/6"
-                >
-                  New
-                </button>
-
-                <div className="text-xs opacity-70">{loading ? "Reviewing your code… " : "Idle"}</div>
-              </div>
+        {/* Right panel */}
+        <div className="w-1/2 bg-gradient-to-br from-gray-800 to-gray-900 p-4 overflow-y-auto">
+          {status === "idle" && (
+            <div className="flex flex-col h-full items-center justify-center text-gray-400">
+              <h2 className="text-xl mb-2 font-medium">Ready to Review 👀</h2>
+              <p className="text-sm text-gray-500">
+                Start typing your code to begin AI analysis.
+              </p>
             </div>
+          )}
 
-            <div className="flex-1 bg-white">
-              <Editor
-                height="100%"
-                theme={theme === "light" ? "vs-light" : "vs-dark"}
-                language={language}
-                value={code}
-                onMount={(editor) => handleEditorMount(editor)}
-                onChange={(v) => handleChange(v || "")}
-                options={{
-                  minimap: { enabled: false },
-                  fontSize: 13,
-                  automaticLayout: true,
-                  scrollBeyondLastLine: false,
-                  tabSize: 2,
+          {status === "thinking" && (
+            <div className="flex flex-col h-full items-center justify-center">
+              <div className="flex space-x-1 mb-2">
+                <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"></span>
+                <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce delay-150"></span>
+                <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce delay-300"></span>
+              </div>
+              <p className="text-lg text-indigo-300 font-medium animate-pulse">
+                Thinking...
+              </p>
+            </div>
+          )}
+
+          {status === "done" && (
+            <div className="animate-fadeIn">
+              <h2 className="text-xl font-semibold text-emerald-400 mb-3">
+                {operation} Results
+              </h2>
+              <DiffViewer
+                oldValue={code}
+                newValue={improvedCode}
+                splitView={true}
+                hideLineNumbers={false}
+                useDarkTheme={true}
+                styles={{
+                  variables: {
+                    light: { diffViewerBackground: "#fff" },
+                    dark: { diffViewerBackground: "#111827" },
+                  },
+                  diffRemoved: {
+                    background: "rgba(239,68,68,0.25)",
+                  },
+                  diffAdded: {
+                    background: "rgba(34,197,94,0.25)",
+                  },
+                  diffChanged: {
+                    background: "rgba(234,179,8,0.25)",
+                  },
                 }}
               />
             </div>
-          </div>
-        </div>
-
-        {/* Review pane */}
-        {review && (
-          <div className="w-1/2 border-l flex flex-col bg-gray-50">
-            <div className="flex items-center justify-between px-4 py-3 border-b">
-              <div className="flex items-center gap-3">
-                <div className={`px-2 py-1 rounded text-xs font-medium ${categoryColor(review.category)}`}>{review.category}</div>
-                <div className="text-sm font-semibold">Suggested Change</div>
-                <div className="text-xs text-gray-500">{review.message}</div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button onClick={() => copyToClipboard(review.improved_code)} className="text-sm px-3 py-1 rounded bg-white/5">
-                  Copy Improved
-                </button>
-
-                <button onClick={acceptSuggestion} className="text-sm px-3 py-1 rounded bg-emerald-500 text-white">
-                  Accept
-                </button>
-
-                <button onClick={declineSuggestion} className="text-sm px-3 py-1 rounded bg-gray-200">
-                  Decline
-                </button>
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-auto p-3">
-              <div className="mb-3 text-xs text-gray-600">Diff (original → improved)</div>
-
-              <div className="bg-white rounded shadow-sm overflow-auto">
-                <DiffViewer oldValue={code} newValue={review.improved_code} splitView={true} showDiffOnly={false} useDarkTheme={theme !== "light"} leftTitle="Original" rightTitle="Improved" />
-              </div>
-            </div>
-
-            <div className="px-4 py-3 border-t bg-white/50 flex items-center justify-between">
-              <div className="text-xs text-gray-600">Model message</div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    triggerImmediateReview();
-                  }}
-                  className="text-xs px-2 py-1 rounded bg-white/5"
-                >
-                  Re-run Review
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="px-4 py-2 text-xs text-gray-400 border-t flex items-center gap-3">
-        <div>{error ? `Error: ${error}` : review ? `Suggestion ready — ${review.category}` : "No suggestions yet"}</div>
-        <div className="ml-auto">
-          Tip: Press <span className="font-medium">Ctrl/Cmd+Enter</span> to run review instantly
+          )}
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="px-4 py-2 text-xs text-gray-400 bg-gray-950 border-t border-gray-800 text-center">
+        Type, paste, or edit code freely — AI analyses when you pause.
+      </footer>
+
+      {/* Animations */}
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn { animation: fadeIn 0.6s ease-in-out; }
+        .delay-150 { animation-delay: 150ms; }
+        .delay-300 { animation-delay: 300ms; }
+      `}</style>
     </div>
   );
 }
