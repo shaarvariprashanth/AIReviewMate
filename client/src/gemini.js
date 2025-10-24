@@ -1,11 +1,11 @@
 export async function generateGeminiReply(message) {
   try {
-    const res = await fetch('http://localhost:5174/', {
+    const res = await fetch(`http://localhost:5174/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'text/plain',
       },
-      body:message,
+      body:message
     })
 
     if (!res.ok) {
