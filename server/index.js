@@ -2,18 +2,23 @@ const express = require("express");
 const dotenv = require("dotenv");
 const { GoogleGenAI } = require("@google/genai");
 const app = express();
+const cors =require("cors")
 
 dotenv.config();
 
 // Middleware
-app.use(express.urlencoded({extended:false}))
+app.use(cors())
+// app.use(express.urlencoded({extended:false}))
+app.use(express.text());
+// app.use(express.json())
+
 
 //using Gemini 
 const genAI = new GoogleGenAI(process.env.GEMINI_API_KEY);
 
-app.get("/", (req, res) => {
-  res.send("Hey, Welcome to AIReviewMate.To check the backend server,just put a code through post request on the same url with urlencoded body through postman with key as text.")
-});
+// app.get("/", (req, res) => {
+//   res.send("Hey, Welcome to AIReviewMate.To check the backend server,just put a code through post request on the same url with urlencoded body through postman with key as text.")
+// });
 
 app.post("/", async (req, res) => {
   try {
@@ -23,7 +28,7 @@ app.post("/", async (req, res) => {
     Best Practices (for cleaner, more maintainable, or more readable code)
     Better Performance (for optimized speed, memory usage, or algorithmic efficiency)
     Bug Fix (for corrections that fix errors or potential issues)
-    And at last, also add all the line numbers in which changes are made in an array"${body.text}"
+    And at last, also add all the line numbers in which changes are made in an array"${body}"
     Output in JSON: { "improvised": "...", "summary": "...", "tags": ["..."],"lines changed":[".."] }
     `;
 
@@ -33,7 +38,7 @@ app.post("/", async (req, res) => {
     });
     let result=response.text;
 
-    //seperating the json part in string format from the response
+    // seperating the json part in string format from the response
     const start=result.indexOf("{")
     const end=result.lastIndexOf("}")
     if (start!=0 || end!=-1){
@@ -43,9 +48,9 @@ app.post("/", async (req, res) => {
     console.log(result)
     res.json(JSON.parse(result)) // we are parsing it the string result to json format
   } catch (error) {
-    console.error("Backend Error", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
+    console.log("Backend Error", error);
+    res.status(500).json({ error: "Internal Server Error",error });
+}
 });
 
-app.listen(8001, () => console.log("Server started at PORT", 8001));
+app.listen(5174, () => console.log("Server started at PORT", 5174));
