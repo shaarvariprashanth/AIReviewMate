@@ -98,7 +98,7 @@ AIREVIEWMATE/
 
 ### 1️⃣ Clone Repository
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/shaarvariprashanth/AIReviewMate.git
 cd frontend
 ```
 
@@ -142,50 +142,6 @@ npm run preview
 
 ---
 
-## 🌐 API Contract
-
-### **Request** (`POST /api/review`)
-```json
-{
-  "code": "function add(a,b){return a+b}",
-  "language": "javascript",
-  "requestId": "1697038400000"
-}
-```
-
-### **Response**
-```json
-{
-  "requestId": "1697038400000",
-  "suggestions": [
-    {
-      "id": "s1",
-      "category": "Best Practices",
-      "shortMessage": "Add semicolon and validate inputs.",
-      "improvedCode": "function add(a, b) { if (typeof a !== 'number' || typeof b !== 'number') throw new Error('Invalid input'); return a + b; }"
-    }
-  ]
-}
-```
-
-### **Error Example**
-```json
-{ "error": "Rate limited. Try again later." }
-```
-
----
-
-## ⚡ Core Components
-
-| Component | Description |
-|------------|--------------|
-| `CodeEditor.jsx` | Monaco-based editor with language selector |
-| `useDebouncedReview.js` | Custom hook for debouncing, cancellation, and API requests |
-| `DiffViewer.jsx` | Renders side-by-side code differences |
-| `SuggestionCard.jsx` | Displays AI suggestion, category, and Accept/Decline buttons |
-| `EditorPage.jsx` | Parent layout combining editor, loader, and diff viewer |
-
----
 
 ## 🔄 Request Control (Debounce + Cancellation)
 
@@ -229,17 +185,6 @@ VITE_FEATURE_GITHUB_PR=true
 ```
 
 > ⚠️ All token handling should be done securely in the backend.
-
----
-
-## 🧪 Scripts
-
-| Command | Description |
-|----------|--------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Build for production |
-| `npm run preview` | Preview production build |
-| `npm run lint` | Run ESLint checks |
 
 ---
 
