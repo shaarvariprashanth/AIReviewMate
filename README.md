@@ -65,29 +65,31 @@ It ensures smooth user experience with **debouncing**, **request cancellation**,
 ## 🗂️ Folder Structure
 
 ```
-frontend/
+AIREVIEWMATE/
 │
-├── src/
-│   ├── components/
-│   │   ├── CodeEditor.jsx
-│   │   ├── DiffViewer.jsx
-│   │   ├── SuggestionCard.jsx
-│   │
-│   ├── hooks/
-│   │   └── useDebouncedReview.js
-│   │
-│   ├── pages/
-│   │   └── EditorPage.jsx
-│   │
-│   ├── App.jsx
-│   └── main.jsx
+├── client/
+│ ├── src/
+│ │ ├── components/
+│ │ │ ├── App.css
+│ │ │ ├── App.jsx
+│ │ │ ├── index.css
+│ │ │ └── main.jsx
+│ │ │
+│ │ └── (other utility files or hooks)
+│ │
+│ ├── .env
+│ ├── .gitignore
+│ ├── eslint.config.js
+│ ├── index.html
+│ ├── package.json
+│ ├── vite.config.js
+│ └── README.md
 │
-├── public/
-│
-├── .env.local
+└── server/
+├── index.js
+├── .env.example
 ├── package.json
-├── vite.config.js
-└── tailwind.config.js
+└── README.md
 ```
 
 ---
