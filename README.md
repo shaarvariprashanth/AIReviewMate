@@ -1,6 +1,8 @@
 # AIReviewMate
 WEC Recruitment Task
 
+# Video Demonstration 
+Here's the complete video link- https://drive.google.com/file/d/1AF8DXlj2feTFy9MZ59B-t3x7zxoWkYh8/view?usp=drive_link
 # Frontend
 
 The **AI Code Reviewer** is a web-based application that continuously analyzes your code as you type or paste it, providing instant, categorized feedback and improved code suggestions with clear explanations and side-by-side diffs.
@@ -8,7 +10,7 @@ The **AI Code Reviewer** is a web-based application that continuously analyzes y
 This document contains the complete setup and usage instructions for the **frontend** part of the project.
 
 ---
-
+#Video Link
 ## 📋 Project Overview
 
 The frontend provides an interactive in-browser code editor that:
@@ -121,11 +123,20 @@ VITE_FEATURE_GITHUB_PR=false               # Set true if enabling PR feature
 # Optional (for OAuth):
 # VITE_GITHUB_CLIENT_ID=your_github_oauth_client_id
 ```
-
-> ⚠️ Never commit `.env.local` — it should be listed in `.gitignore`.
-
 ---
-
+### Server Setup Instructions
+1. Clone the repository
+2. Navigate to the server folder:
+3. Create a `.env` file based on `.env.example` and Add your API key in this format:
+   GEMINI_API_KEY=your_api_key_here
+4. Install dependencies and run the server:
+ ```bash
+npm install --legacy-peer-deps
+```
+   ```bash
+node index
+```
+   
 ## 🖥️ Run the Application
 
 ### Development Mode
@@ -172,21 +183,7 @@ The frontend ensures that:
 
 ---
 
-## 🧩 GitHub PR Mode (Optional Feature)
 
-When enabled:
-1. User connects their GitHub account via OAuth (handled by backend).
-2. Select a repository and branch.
-3. On accepting a suggestion → a new branch and PR are created automatically.
-
-Environment variable:
-```
-VITE_FEATURE_GITHUB_PR=true
-```
-
-> ⚠️ All token handling should be done securely in the backend.
-
----
 
 ## ⚡ Troubleshooting
 
@@ -213,12 +210,5 @@ VITE_FEATURE_GITHUB_PR=true
 
 ---
 
-### Server Setup Instructions
-1. Clone the repository
-2. Navigate to the server folder:
-3. Create a `.env` file based on `.env.example` and Add your API key in this format:
-   GEMINI_API_KEY=your_api_key_here
-4. Install dependencies and run:
-   npm install
-   node index
+
 
