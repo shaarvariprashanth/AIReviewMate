@@ -104,16 +104,10 @@ const LANGUAGE_OPTIONS = Object.keys(LANGUAGE_TEMPLATES).map((lang) => ({
   value: lang,
 }));
 
-const OPERATION_OPTIONS = [
-  { label: "Bug Fixes", value: "Bug Fixes" },
-  { label: "Optimisation", value: "Optimisation" },
-  { label: "Best Practices", value: "Best Practices" },
-];
 
 export default function App() {
 
   const [language, setLanguage] = useState("javascript");
-  const [operation, setOperation] = useState({ value: "Bug Fixes"});
   const [code, setCode] = useState(LANGUAGE_TEMPLATES["javascript"]);
   const [status, setStatus] = useState("idle"); // idle | thinking | done
   const [improvedCode, setImprovedCode] = useState("");
@@ -178,26 +172,6 @@ export default function App() {
               ))}
             </select>
           </div>
-
-          {/* Operation Dropdown<Hidden> */}  
-          <div className="invisible">
-            <label className="text-sm mr-2">Operation:</label>
-            <select
-              value={operation.value}
-              onChange={(e) =>
-                setOperation({
-                  value: e.target.value,
-                })
-              }
-              className="bg-indigo-600 text-white px-2 py-1 rounded-md text-sm"
-            >
-              {OPERATION_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
       </header>
 
@@ -246,9 +220,6 @@ export default function App() {
 
           {status === "done" && (
             <div className="animate-fadeIn">
-              <h2 className="text-xl font-semibold text-emerald-400 mb-3">
-                {operation.value} Results:
-              </h2>
               {/* --- Categorized Tags Display --- */}
               <div className="space-y-3 text-sm text-gray-300 mb-4">
                 {Object.entries(CatTags || {}).map(([category, items]) => {
