@@ -1,16 +1,13 @@
 # AIReviewMate
-WEC Recruitment Task
-
-# Video Demonstration 
-Here's the complete video link- https://drive.google.com/file/d/1AF8DXlj2feTFy9MZ59B-t3x7zxoWkYh8/view?usp=drive_link
-# Frontend
 
 The **AI Code Reviewer** is a web-based application that continuously analyzes your code as you type or paste it, providing instant, categorized feedback and improved code suggestions with clear explanations and side-by-side diffs.
 
-This document contains the complete setup and usage instructions for the **frontend** part of the project.
-
+# Video Demonstration 
+Here's the complete video link- https://drive.google.com/file/d/1AF8DXlj2feTFy9MZ59B-t3x7zxoWkYh8/view?usp=drive_link
 ---
-#Video Link
+# Frontend
+This document contains the complete setup and usage instructions for the **frontend** part of the project.
+---
 ## 📋 Project Overview
 
 The frontend provides an interactive in-browser code editor that:
